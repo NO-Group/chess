@@ -1,108 +1,235 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Premium Chess</title>
-<style>
-body { margin:0; font-family:Arial; background:#111; color:#fff; display:flex; flex-direction:column; height:100vh; }
-.header { background:#000; padding:15px; text-align:center; }
-h1 { margin:0; color:#ffd700; }
-.controls { padding:10px; text-align:center; background:#222; }
-button { padding:10px 20px; margin:5px; font-size:16px; border:none; border-radius:8px; cursor:pointer; }
-.yellow-btn { background:#ffd700; color:#000; font-weight:bold; }
-#board { display:grid; grid-template-columns: repeat(8, 1fr); width: min(90vw, 500px); height: min(90vw, 500px); margin:20px auto; border:12px solid #3c2f2f; box-shadow: 0 0 30px rgba(255,215,0,0.5); }
-.square { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size: calc(min(90vw,500px)/9); cursor:pointer; position:relative; }
-.light { background:#f0d9b5; }
-.dark { background:#b58863; }
-.piece { font-size: calc(min(90vw,500px)/8); transition: transform 0.2s; }
-.piece:hover { transform: scale(1.2); }
-.highlight { box-shadow: inset 0 0 0 5px rgba(255,255,0,0.8); }
-.selected { box-shadow: inset 0 0 0 5px #00ff00; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Chess</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Roboto:wght@400;500&display=swap');
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(#0a0a0a, #1a1a1a);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 10px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.8em;
+            color: #ffd700;
+            text-shadow: 0 0 20px #ffd700;
+            margin: 10px 0 5px;
+        }
+        .status {
+            background: rgba(255,215,0,0.2);
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 15px 0;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 1.05em;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(255,215,0,0.3);
+        }
+        .yellow-btn {
+            background: linear-gradient(#ffd700, #ffaa00);
+            color: #000;
+        }
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255,215,0,0.5);
+        }
+        #board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            width: min(92vw, 560px);
+            height: min(92vw, 560px);
+            border: 14px solid #3c2f2f;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+            background: #3c2f2f;
+        }
+        .square {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 42px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+        }
+        .light { background: #f0d9b5; }
+        .dark { background: #b58863; }
+        .square:hover { filter: brightness(1.1); }
+        .piece {
+            transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+        }
+        .square:active .piece { transform: scale(1.4); }
+        .highlight::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: rgba(255, 255, 0, 0.5);
+            border-radius: 50%;
+        }
+        .selected {
+            box-shadow: inset 0 0 0 6px #00ff88 !important;
+        }
+    </style>
 </head>
 <body>
-<div class="header">
-<h1>♟️ Premium Chess</h1>
-<div id="status">White's Turn</div>
-</div>
-<div class="controls">
-<button class="yellow-btn" onclick="newGame()">🔄 New Game</button>
-<button class="yellow-btn" onclick="toggleAI()" id="aiBtn">🤖 AI: Off</button>
-<button class="yellow-btn" onclick="undo()">↩ Undo</button>
-</div>
-<div id="board"></div>
-<script>
-// Full chess logic will be here - this is a premium version
-let board = [
-  ['r','n','b','q','k','b','n','r'],
-  ['p','p','p','p','p','p','p','p'],
-  ['.','.','.','.','.','.','.','.'],
-  ['.','.','.','.','.','.','.','.'],
-  ['.','.','.','.','.','.','.','.'],
-  ['.','.','.','.','.','.','.','.'],
-  ['P','P','P','P','P','P','P','P'],
-  ['R','N','B','Q','K','B','N','R']
-];
-let selected = null;
-let currentPlayer = 'w';
-let aiEnabled = false;
+    <div class="header">
+        <h1>♟️ Premium Chess</h1>
+        <div id="status" class="status">White's Turn</div>
+    </div>
 
-function renderBoard() {
-  const boardEl = document.getElementById('board');
-  boardEl.innerHTML = '';
-  for (let row = 0; row < 8; row++) {
-    for (let col = 0; col < 8; col++) {
-      const square = document.createElement('div');
-      square.className = `square ${(row+col)%2 === 0 ? 'light' : 'dark'}`;
-      square.dataset.row = row;
-      square.dataset.col = col;
-      const piece = board[row][col];
-      if (piece !== '.') {
-        square.innerHTML = `<span class="piece">${getUnicode(piece)}</span>`;
-      }
-      square.onclick = () => handleClick(row, col);
-      boardEl.appendChild(square);
-    }
-  }
-}
+    <div class="controls">
+        <button class="yellow-btn" onclick="newGame()">🔄 New Game</button>
+        <button class="yellow-btn" onclick="toggleAI()" id="aiBtn">🤖 AI: Off</button>
+        <button class="yellow-btn" onclick="undoMove()">↩ Undo</button>
+    </div>
 
-function getUnicode(p) {
-  const map = {'K':'♔','Q':'♕','R':'♖','B':'♗','N':'♘','P':'♙','k':'♚','q':'♛','r':'♜','b':'♝','n':'♞','p':'♟'};
-  return map[p] || p;
-}
+    <div id="board"></div>
 
-function handleClick(row, col) {
-  // Basic move logic - to be expanded to full rules
-  if (selected) {
-    // Move piece (simplified)
-    board[row][col] = board[selected.row][selected.col];
-    board[selected.row][selected.col] = '.';
-    selected = null;
-    currentPlayer = currentPlayer === 'w' ? 'b' : 'w';
-    document.getElementById('status').textContent = (currentPlayer === 'w' ? 'White' : 'Black') + "'s Turn";
-    renderBoard();
-    if (aiEnabled && currentPlayer === 'b') setTimeout(aiMove, 300);
-  } else if (board[row][col] !== '.' && isWhite(board[row][col]) === (currentPlayer === 'w')) {
-    selected = {row, col};
-    renderBoard();
-  }
-}
+    <script>
+        let board = [
+            ['r','n','b','q','k','b','n','r'],
+            ['p','p','p','p','p','p','p','p'],
+            [null,null,null,null,null,null,null,null],
+            [null,null,null,null,null,null,null,null],
+            [null,null,null,null,null,null,null,null],
+            [null,null,null,null,null,null,null,null],
+            ['P','P','P','P','P','P','P','P'],
+            ['R','N','B','Q','K','B','N','R']
+        ];
 
-function isWhite(p) { return p === p.toUpperCase(); }
+        let currentPlayer = 'w';
+        let selectedPiece = null;
+        let aiEnabled = false;
+        let moveHistory = [];
 
-function newGame() { location.reload(); }
-function toggleAI() {
-  aiEnabled = !aiEnabled;
-  document.getElementById('aiBtn').textContent = aiEnabled ? '🤖 AI: On' : '🤖 AI: Off';
-}
-function undo() { alert('Undo coming in next update'); }
+        const unicodePieces = {
+            'K':'♔', 'Q':'♕', 'R':'♖', 'B':'♗', 'N':'♘', 'P':'♙',
+            'k':'♚', 'q':'♛', 'r':'♜', 'b':'♝', 'n':'♞', 'p':'♟'
+        };
 
-function aiMove() {
-  // Simple AI - random valid move
-  alert('AI thinking... (full version coming soon)');
-}
-renderBoard();
-</script>
+        function renderBoard(highlighted = []) {
+            const boardDiv = document.getElementById('board');
+            boardDiv.innerHTML = '';
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const sq = document.createElement('div');
+                    sq.className = `square ${(r+c)%2 === 0 ? 'light' : 'dark'}`;
+                    sq.dataset.r = r;
+                    sq.dataset.c = c;
+
+                    const piece = board[r][c];
+                    if (piece) {
+                        const p = document.createElement('span');
+                        p.className = 'piece';
+                        p.innerHTML = unicodePieces[piece] || piece;
+                        sq.appendChild(p);
+                    }
+
+                    if (highlighted.some(h => h.r === r && h.c === c)) sq.classList.add('highlight');
+                    if (selectedPiece && selectedPiece.r === r && selectedPiece.c === c) sq.classList.add('selected');
+
+                    sq.addEventListener('click', () => handleClick(r, c));
+                    boardDiv.appendChild(sq);
+                }
+            }
+        }
+
+        function handleClick(r, c) {
+            if (selectedPiece) {
+                if (isLegalMove(selectedPiece.r, selectedPiece.c, r, c)) {
+                    executeMove(selectedPiece.r, selectedPiece.c, r, c);
+                }
+                selectedPiece = null;
+            } else if (board[r][c] && ((board[r][c].toUpperCase() === board[r][c]) === (currentPlayer === 'w'))) {
+                selectedPiece = {r, c};
+                const moves = getPossibleMoves(r, c);
+                renderBoard(moves);
+                return;
+            }
+            renderBoard();
+        }
+
+        function isLegalMove(fr, fc, tr, tc) {
+            // Full chess logic would go here. For now basic movement.
+            return true;
+        }
+
+        function getPossibleMoves(r, c) {
+            return [];
+        }
+
+        function executeMove(fr, fc, tr, tc) {
+            const piece = board[fr][fc];
+            board[tr][tc] = piece;
+            board[fr][fc] = null;
+            moveHistory.push({fr, fc, tr, tc});
+            currentPlayer = currentPlayer === 'w' ? 'b' : 'w';
+            document.getElementById('status').textContent = currentPlayer === 'w' ? "White's Turn" : "Black's Turn";
+            if (aiEnabled && currentPlayer === 'b') setTimeout(aiThink, 350);
+            renderBoard();
+        }
+
+        function aiThink() {
+            // Random AI move for demo
+            let fromR = Math.floor(Math.random()*8);
+            let fromC = Math.floor(Math.random()*8);
+            while (!board[fromR][fromC] || board[fromR][fromC].toUpperCase() === board[fromR][fromC]) {
+                fromR = Math.floor(Math.random()*8);
+                fromC = Math.floor(Math.random()*8);
+            }
+            let toR = Math.floor(Math.random()*8);
+            let toC = Math.floor(Math.random()*8);
+            executeMove(fromR, fromC, toR, toC);
+        }
+
+        function newGame() { location.reload(); }
+        function toggleAI() {
+            aiEnabled = !aiEnabled;
+            document.getElementById('aiBtn').innerText = aiEnabled ? '🤖 AI: On' : '🤖 AI: Off';
+        }
+        function undoMove() {
+            if (moveHistory.length === 0) return alert('No moves to undo');
+            const m = moveHistory.pop();
+            board[m.fr][m.fc] = board[m.tr][m.tc];
+            board[m.tr][m.tc] = null;
+            currentPlayer = currentPlayer === 'w' ? 'b' : 'w';
+            document.getElementById('status').textContent = currentPlayer === 'w' ? "White's Turn" : "Black's Turn";
+            renderBoard();
+        }
+
+        renderBoard();
+    </script>
 </body>
 </html>
